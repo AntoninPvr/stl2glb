@@ -1,3 +1,9 @@
+# STL and GLB files
+*.stl
+*.STL
+*.glb
+*.glTF
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
