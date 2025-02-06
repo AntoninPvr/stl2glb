@@ -13,5 +13,5 @@ def parse_arguments():
     parser.add_argument("--DEBUG", action="store_true", help="Run the program in debug mode")
     parser.add_argument("-i", "--input", dest='input_path', help="Input path", default=None)
     parser.add_argument("-o", "--output", dest='output_path', help="Output path", default=None)
-    parser.add_argument("-p", "--process", dest='process', help="Number of process to use", default=1, type=int)
+    parser.add_argument("-p", "--process", dest='process', help="Number of process to use", default=0, type=int)
     return parser.parse_args()

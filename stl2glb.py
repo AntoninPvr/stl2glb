@@ -1,8 +1,11 @@
 import trimesh
 import logging
 import pathlib
+import os
 from src.arguments import parse_arguments
 from src.logger import init_logger
+
+MIN_CHUNK_SIZE = 10
 
 def input_path_to_file_list(input_path: pathlib.Path):
     """
@@ -106,7 +109,7 @@ def main():
 
     # Get number of process
     process_amount = args.process
-
+    
     # get paths
     input_path = pathlib.Path(args.input_path)
     if args.output_path is None:
@@ -120,6 +123,19 @@ def main():
     # Get list of files to export
     input_files = input_path_to_file_list(input_path)
     logger.info(f"Exporting {len(input_files)} file{'s' if len(input_files) != 1 else ''}")
+
+    # Choose how many process to use
+    available_cores = os.cpu_count()
+    if process_amount < 0:
+        process_amount = 0
+        logger.error("Number of process must be greater than 0, using auto mode")
+    if len(input_files) < MIN_CHUNK_SIZE: # Single process mode
+        process_amount = 1
+    elif process_amount == 0: # Auto mode
+        query_core = len(input_files) // MIN_CHUNK_SIZE
+        process_amount = query_core if query_core <= available_cores else available_cores
+    elif process_amount > os.cpu_count():
+        logger.warning(f"Number of process is greater than number of CPU cores: {available_cores}")
 
     # Export files
     if process_amount == 1:
