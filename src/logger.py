@@ -3,7 +3,6 @@
 This file contains the logger
 """
 import logging
-import os.path
 
 def init_logger(logger=None, log_level="INFO", file_path=None, file_path_level="DEBUG"):
     logger.setLevel(logging.DEBUG)

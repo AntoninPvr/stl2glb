@@ -11,6 +11,6 @@ def parse_arguments():
                         choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
                         help='Set the logging level (default: %(default)s)')
     parser.add_argument("--DEBUG", action="store_true", help="Run the program in debug mode")
-    parser.add_argument("-i", "--input", dest='input_file', help="Input file name", default=None)
-    parser.add_argument("-o", "--output", dest='output_file', help="Output file name", default=None)
+    parser.add_argument("-i", "--input", dest='input_path', help="Input path", default=None)
+    parser.add_argument("-o", "--output", dest='output_path', help="Output path", default=None)
     return parser.parse_args()
