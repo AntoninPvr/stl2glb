@@ -60,10 +60,25 @@ def batch_export(input_files: list [pathlib.Path], output_path: pathlib.Path, in
 
     return nbr_exported
 
-def export_in_parallel(input_files, output_path, input_path, num_process=4):
+def export_in_parallel(input_files, output_path, input_path, num_process=1):
+    """
+    Export files in parallel using multiprocessing
+
+    :param input_files: list
+    :param output_path: pathlib.Path
+    :param input_path: pathlib.Path
+    :param num_process: int
+
+    :return: int (number of files exported)
+    """
     import multiprocessing
     from functools import partial
-    """ Function to split export tasks across multiple processes. """
+
+    # Check if number of process is greater than number of files
+    if len(input_files) < num_process:
+        num_process = len(input_files)
+        logging.warning(f"Number of process set to {num_process} to match number of files")
+    
     # Split the files into chunks to distribute across processes
     chunk_size = len(input_files) // num_process
     chunks = [input_files[i:i + chunk_size] for i in range(0, len(input_files), chunk_size)]
