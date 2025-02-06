@@ -60,10 +60,25 @@ def batch_export(input_files: list [pathlib.Path], output_path: pathlib.Path, in
 
     return nbr_exported
 
-def export_in_parallel(input_files, output_path, input_path, num_threads=4):
+def export_in_parallel(input_files: list[pathlib.Path], output_path: pathlib.Path, input_path: pathlib.Path, num_threads=1):
+    """
+    Export files in parallel using ThreadPoolExecutor
+
+    :param input_files: list
+    :param output_path: pathlib.Path
+    :param input_path: pathlib.Path
+    :param num_threads: int
+
+    :return: int (number of files exported)
+    """
     import concurrent.futures
     from functools import partial
-    """ Function to split export tasks across multiple threads. """
+
+    # Limit the number of threads to the number of input files
+    if len(input_files) < num_threads:
+        num_threads = len(input_files)
+        logging.warning(f"Number of threads limited to {num_threads} to match the number of input files")
+
     # Split the files into chunks to distribute across threads
     chunk_size = len(input_files) // num_threads
     chunks = [input_files[i:i + chunk_size] for i in range(0, len(input_files), chunk_size)]
