@@ -60,36 +60,35 @@ def batch_export(input_files: list [pathlib.Path], output_path: pathlib.Path, in
 
     return nbr_exported
 
-def export_in_parallel(input_files: list[pathlib.Path], output_path: pathlib.Path, input_path: pathlib.Path, num_threads=1):
+def export_in_parallel(input_files, output_path, input_path, num_process=1):
     """
-    Export files in parallel using ThreadPoolExecutor
+    Export files in parallel using multiprocessing
 
     :param input_files: list
     :param output_path: pathlib.Path
     :param input_path: pathlib.Path
-    :param num_threads: int
+    :param num_process: int
 
     :return: int (number of files exported)
     """
-    import concurrent.futures
+    import multiprocessing
     from functools import partial
 
-    # Limit the number of threads to the number of input files
-    if len(input_files) < num_threads:
-        num_threads = len(input_files)
-        logging.warning(f"Number of threads limited to {num_threads} to match the number of input files")
-
-    # Split the files into chunks to distribute across threads
-    chunk_size = len(input_files) // num_threads
+    # Check if number of process is greater than number of files
+    if len(input_files) < num_process:
+        num_process = len(input_files)
+        logging.warning(f"Number of process set to {num_process} to match number of files")
+    
+    # Split the files into chunks to distribute across processes
+    chunk_size = len(input_files) // num_process
     chunks = [input_files[i:i + chunk_size] for i in range(0, len(input_files), chunk_size)]
     
     # Create a partial function to pass arguments to `batch_export`
     partial_export = partial(batch_export, output_path=output_path, input_path=input_path)
     
-    # Use ThreadPoolExecutor to process the chunks in parallel
-    with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as executor:
-        futures = [executor.submit(partial_export, chunk) for chunk in chunks]
-        results = [future.result() for future in concurrent.futures.as_completed(futures)]
+    # Use multiprocessing to process the chunks in parallel
+    with multiprocessing.Pool(processes=num_process) as pool:
+        results = pool.map(partial_export, chunks)
 
     # Sum the results to get the total number of files exported
     return sum(results)
@@ -105,8 +104,8 @@ def main():
     # Set log level
     logger.setLevel(args.log_level)
 
-    # Get number of threads
-    threads_amount = args.threads
+    # Get number of process
+    process_amount = args.process
 
     # get paths
     input_path = pathlib.Path(args.input_path)
@@ -123,11 +122,11 @@ def main():
     logger.info(f"Exporting {len(input_files)} file{'s' if len(input_files) != 1 else ''}")
 
     # Export files
-    if threads_amount == 1:
+    if process_amount == 1:
         nbr_exported = batch_export(input_files, output_path, input_path)
     else:
-        logger.info(f"Exporting in parallel using {threads_amount} threads")
-        nbr_exported = export_in_parallel(input_files, output_path, input_path, threads_amount)
+        logger.info(f"Exporting in parallel using {process_amount} process")
+        nbr_exported = export_in_parallel(input_files, output_path, input_path, process_amount)
     
     logger.info(f"Exported {nbr_exported}/{len(input_files)} file{'s' if nbr_exported != 1 else ''} to: {output_path}")
 
