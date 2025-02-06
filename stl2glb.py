@@ -60,6 +60,25 @@ def batch_export(input_files: list [pathlib.Path], output_path: pathlib.Path, in
 
     return nbr_exported
 
+def export_in_parallel(input_files, output_path, input_path, num_threads=4):
+    import concurrent.futures
+    from functools import partial
+    """ Function to split export tasks across multiple threads. """
+    # Split the files into chunks to distribute across threads
+    chunk_size = len(input_files) // num_threads
+    chunks = [input_files[i:i + chunk_size] for i in range(0, len(input_files), chunk_size)]
+    
+    # Create a partial function to pass arguments to `batch_export`
+    partial_export = partial(batch_export, output_path=output_path, input_path=input_path)
+    
+    # Use ThreadPoolExecutor to process the chunks in parallel
+    with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as executor:
+        futures = [executor.submit(partial_export, chunk) for chunk in chunks]
+        results = [future.result() for future in concurrent.futures.as_completed(futures)]
+
+    # Sum the results to get the total number of files exported
+    return sum(results)
+
 def main():
     # Initialize logger
     logger = logging.getLogger(__name__)
@@ -67,6 +86,12 @@ def main():
 
     # Parse arguments
     args = parse_arguments()
+
+    # Set log level
+    logger.setLevel(args.log_level)
+
+    # Get number of threads
+    threads_amount = args.threads
 
     # get paths
     input_path = pathlib.Path(args.input_path)
@@ -80,10 +105,15 @@ def main():
 
     # Get list of files to export
     input_files = input_path_to_file_list(input_path)
-    logger.info(f"Exporting file(s): {input_files}")
+    logger.info(f"Exporting {len(input_files)} file{'s' if len(input_files) != 1 else ''}")
 
     # Export files
-    nbr_exported = batch_export(input_files, output_path, input_path)
+    if threads_amount == 1:
+        nbr_exported = batch_export(input_files, output_path, input_path)
+    else:
+        logger.info(f"Exporting in parallel using {threads_amount} threads")
+        nbr_exported = export_in_parallel(input_files, output_path, input_path, threads_amount)
+    
     logger.info(f"Exported {nbr_exported}/{len(input_files)} file{'s' if nbr_exported != 1 else ''} to: {output_path}")
 
 if __name__ == "__main__":
