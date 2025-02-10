@@ -74,7 +74,7 @@ def export_in_parallel(input_files, output_path, input_path, num_process=1):
 
     :return: int (number of files exported)
     """
-    import multiprocessing
+    import concurrent.futures
     from functools import partial
 
     # Check if number of process is greater than number of files
@@ -88,10 +88,9 @@ def export_in_parallel(input_files, output_path, input_path, num_process=1):
     
     # Create a partial function to pass arguments to `batch_export`
     partial_export = partial(batch_export, output_path=output_path, input_path=input_path)
-    
-    # Use multiprocessing to process the chunks in parallel
-    with multiprocessing.Pool(processes=num_process) as pool:
-        results = pool.map(partial_export, chunks)
+
+    with concurrent.futures.ProcessPoolExecutor(max_workers=num_process) as executor:
+        results = list(executor.map(partial_export, chunks))
 
     # Sum the results to get the total number of files exported
     return sum(results)
